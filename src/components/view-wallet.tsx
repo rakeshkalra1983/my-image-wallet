@@ -17,11 +17,8 @@ export default function Wallet() {
 			navigationTitle="Image Wallet"
 			searchBarPlaceholder="Search Cards..."
 			actions={
-				<ActionPanel>
-				  <Action title="Reload" onAction={() => revalidate()} />
-				</ActionPanel>
+				editAction()
 			  }
-			//searchBarAccessory={gridDropdown()}
 		>
 			{ data }
 		</Grid>
@@ -51,74 +48,22 @@ async function gridContent() {
 	return outPockets
 }
 
-/* function gridDropdown() { return (
-	<Grid.Dropdown tooltip="Pocket">
-		<Grid.Dropdown.Item
-			title="All Cards"
-			value="All Cards"
-		/>
-		<Grid.Dropdown.Section>
-			<Grid.Dropdown.Item
-				title="New Pocket"
-				value="New Pocket"
-				icon={Icon.NewFolder}
-			/>
-		</Grid.Dropdown.Section>
-		<Grid.Dropdown.Section title="Pockets">
-			<Grid.Dropdown.Item
-				title="Garfield"
-				value="Garfield"
-			/>
-			<Grid.Dropdown.Item
-				title="Soyjaks"
-				value="Soyjaks"
-			/>
-		</Grid.Dropdown.Section>
-	</Grid.Dropdown>
-)} */
-
-function cardActions(item: Card) {return (
+function cardActions(item: Card) { return (
 	<ActionPanel>
 		<ActionPanel.Section>
 			<Action.Paste content={{ file: item.path }} />
 			<Action.CopyToClipboard content={{ file: item.path }} />
 		</ActionPanel.Section>
-		<ActionPanel.Section>
-			<Action
-				title="Edit Card"
-				icon={Icon.Pencil}
-				shortcut={{ modifiers: ["cmd"], key: "e" }}
-				onAction={() => editCard(item.name)}
-			/>
-			<Action.Push
-				title="New Card"
-				icon={Icon.PlusSquare}
-				shortcut={{ modifiers: ["cmd"], key: "n" }}
-				target={<NewCard />}
-			/>
-		</ActionPanel.Section>
-		<ActionPanel.Section>
-			<Action
-				title="Delete Card"
-				icon={Icon.Trash}
-				shortcut={{ modifiers: ["ctrl"], key: "x" }}
-				style={Action.Style.Destructive}
-				onAction={() => deleteCard(item.name)}
-			/>
-			<Action
-				title="Delete All Cards in Pocket"
-				icon={Icon.Folder}
-				shortcut={{ modifiers: ["ctrl"], key: "x" }}
-				style={Action.Style.Destructive}
-				onAction={() => deletePocket(item.name)}
-			/>
-			<Action
-				title="Delete All Cards in Wallet"
-				icon={Icon.Wallet}
-				shortcut={{ modifiers: ["ctrl", "shift"], key: "x" }}
-				style={Action.Style.Destructive}
-				onAction={() => deleteAll()}
-			/>
-		</ActionPanel.Section>
+		{editAction()}
 	</ActionPanel>
+)}
+
+function editAction() { return (
+	<ActionPanel.Section>
+		<Action.ShowInFinder
+			title="Edit Wallet"
+			shortcut={{modifiers: ["cmd"], key: "e"}}
+			path={environment.supportPath}
+		/>
+	</ActionPanel.Section>
 )}
