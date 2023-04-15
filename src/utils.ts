@@ -5,11 +5,7 @@ import { readdir, lstatSync } from "fs";
 
 import { Pocket, Card, CardForm } from "./types"
 
-export async function loadGrid(): Promise<Pocket[]> {
-	return fetchFiles(environment.supportPath)
-}
-
-async function fetchFiles(dir: string): Promise<Pocket[]> {
+export async function fetchFiles(dir: string): Promise<Pocket[]> {
 	const pocketArr: Pocket[] = []
 
 	loadPocketCards(dir)
@@ -42,17 +38,11 @@ async function loadPocketCards(dir :string): Promise<Card[]> {
 	readdir(dir, (err, items: string[]) => {
 		items.forEach(item => {
 			const filePath = `${dir}/${item}`;
-
-			let fileStats = lstatSync("/")
-			if (!filePath.includes(".DS_Store")) fileStats = lstatSync(filePath)
-
-			//const fileStats = lstatSync(filePath)
+			const fileStats = lstatSync(filePath)
 			const fileExt = extname(filePath)
 			const fileName = basename(filePath, fileExt)
 
 			if (fileStats.isDirectory()) return;
-			if (fileName.startsWith(".")) return;
-
 			if (fileName.startsWith(".")) return;
 
 			cardArr.push({ name: fileName, path: filePath });

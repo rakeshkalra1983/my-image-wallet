@@ -1,13 +1,13 @@
-import { Action, ActionPanel, Grid, Icon } from "@raycast/api";
+import { environment, Action, ActionPanel, Grid, Icon } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 
 import NewCard from "../components/newCard"
-import { deleteCard, deletePocket, deleteAll, editCard, loadGrid } from "../utils";
-import { Card, Pocket } from "../types";
+import { deleteCard, deletePocket, deleteAll, editCard, fetchFiles } from "../utils";
+import { Card } from "../types";
 import { ReactNode } from "react";
 
 export default function Wallet() {
-	const { isLoading, data } = usePromise(loadGrid);
+	const { isLoading, data } = usePromise(gridContent);
 
 	return (
 		<Grid
@@ -18,32 +18,32 @@ export default function Wallet() {
 			searchBarPlaceholder="Search Cards..."
 			//searchBarAccessory={gridDropdown()}
 		>
-			{ gridContent(data) }
+			{ data }
 		</Grid>
 	);
 }
 
-function gridContent(data?: Pocket[]): ReactNode {
-	const pockets:ReactNode[] = []
+async function gridContent() {
+	const outPockets:ReactNode[] = []
 
-	data?.forEach((pocket) => {
-		console.log(pocket)
-
-		pockets.push(
-			<Grid.Section title={pocket.name} key={pocket.name}>
-				{pocket.cards.map(card => (
-					<Grid.Item
-						key={card.path}
-						content={card.path}
-						title={card.name}
-						actions={cardActions(card)}
-					/>
-				))}
-			</Grid.Section>
-		)
+	fetchFiles(environment.supportPath).then(pockets => {
+		pockets.forEach((pocket) => {
+			outPockets.push(
+				<Grid.Section title={pocket.name} key={pocket.name}>
+					{pocket.cards.map(card => (
+						<Grid.Item
+							key={card.path}
+							content={card.path}
+							title={card.name}
+							actions={cardActions(card)}
+						/>
+					))}
+				</Grid.Section>
+			)
+		})
 	})
 
-	return pockets
+	return outPockets
 }
 
 /* function gridDropdown() { return (
