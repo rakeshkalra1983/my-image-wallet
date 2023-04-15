@@ -1,7 +1,7 @@
 import { confirmAlert, environment, Alert } from "@raycast/api";
 
 import { basename, extname } from "path";
-import { readdir, lstatSync } from "fs";
+import { lstatSync, readdirSync } from "fs";
 
 import { Pocket, Card, CardForm } from "./types"
 
@@ -10,9 +10,25 @@ export async function fetchFiles(dir: string): Promise<Pocket[]> {
 
 	loadPocketCards(dir)
 	.then(cards => {
-		pocketArr.push({ name: "Unsorted", cards: cards })
+		pocketArr.push({ cards: cards })
 	})
-	readdir(environment.supportPath, (err, items: string[]) => {
+	const items = readdirSync(environment.supportPath)
+	items.forEach(item => {
+		const filePath = `${dir}/${item}`
+		const fileStats = lstatSync(filePath)
+		const fileExt = extname(filePath)
+		const fileName = basename(filePath, fileExt)
+
+		if (!fileStats.isDirectory()) return;
+		if (fileName.startsWith(".")) return;
+
+		loadPocketCards(`${dir}/${item}`)
+		.then(cards => {
+			pocketArr.push({ name: item, cards: cards})
+		})
+	})
+
+/* 	readdir(environment.supportPath, (err, items: string[]) => {
 		items.forEach(item => {
 			const filePath = `${dir}/${item}`
 			const fileStats = lstatSync(filePath)
@@ -27,7 +43,7 @@ export async function fetchFiles(dir: string): Promise<Pocket[]> {
 				pocketArr.push({ name: item, cards: cards})
 			})
 		})
-	})
+	}) */
 
 	return pocketArr;
 }
@@ -35,7 +51,19 @@ export async function fetchFiles(dir: string): Promise<Pocket[]> {
 async function loadPocketCards(dir :string): Promise<Card[]> {
 	const cardArr: Card[] = []
 
-	readdir(dir, (err, items: string[]) => {
+	const items = readdirSync(dir)
+	items.forEach(item => {
+		const filePath = `${dir}/${item}`;
+		const fileStats = lstatSync(filePath)
+		const fileExt = extname(filePath)
+		const fileName = basename(filePath, fileExt)
+
+		if (fileStats.isDirectory()) return;
+		if (fileName.startsWith(".")) return;
+
+		cardArr.push({ name: fileName, path: filePath });
+	})
+	/* readdir(dir, (err, items: string[]) => {
 		items.forEach(item => {
 			const filePath = `${dir}/${item}`;
 			const fileStats = lstatSync(filePath)
@@ -47,7 +75,7 @@ async function loadPocketCards(dir :string): Promise<Card[]> {
 
 			cardArr.push({ name: fileName, path: filePath });
 		})
-	})
+	}) */
 
 	return cardArr
 }

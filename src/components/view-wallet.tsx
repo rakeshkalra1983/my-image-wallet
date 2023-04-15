@@ -7,7 +7,7 @@ import { Card } from "../types";
 import { ReactNode } from "react";
 
 export default function Wallet() {
-	const { isLoading, data } = usePromise(gridContent);
+	const { isLoading, data, revalidate } = usePromise(gridContent);
 
 	return (
 		<Grid
@@ -16,6 +16,11 @@ export default function Wallet() {
 			inset={Grid.Inset.Large}
 			navigationTitle="Image Wallet"
 			searchBarPlaceholder="Search Cards..."
+			actions={
+				<ActionPanel>
+				  <Action title="Reload" onAction={() => revalidate()} />
+				</ActionPanel>
+			  }
 			//searchBarAccessory={gridDropdown()}
 		>
 			{ data }
@@ -29,7 +34,7 @@ async function gridContent() {
 	fetchFiles(environment.supportPath).then(pockets => {
 		pockets.forEach((pocket) => {
 			outPockets.push(
-				<Grid.Section title={pocket.name} key={pocket.name}>
+				<Grid.Section title={pocket.name} key={pocket.name || "unsorted"}>
 					{pocket.cards.map(card => (
 						<Grid.Item
 							key={card.path}
