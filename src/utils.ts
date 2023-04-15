@@ -3,8 +3,66 @@ import { confirmAlert, environment, Alert } from "@raycast/api";
 import { basename, extname } from "path";
 import { readdir, lstatSync } from "fs";
 
-import { CardItem, CardForm } from "./types"
+import { Pocket, Card, CardForm } from "./types"
 
+export async function loadGrid(): Promise<Pocket[]> {
+	return fetchFiles(environment.supportPath)
+}
+
+async function fetchFiles(dir: string): Promise<Pocket[]> {
+	const pocketArr: Pocket[] = []
+
+	loadPocketCards(dir)
+	.then(cards => {
+		pocketArr.push({ name: "Unsorted", cards: cards })
+	})
+	readdir(environment.supportPath, (err, items: string[]) => {
+		items.forEach(item => {
+			const filePath = `${dir}/${item}`
+			const fileStats = lstatSync(filePath)
+			const fileExt = extname(filePath)
+			const fileName = basename(filePath, fileExt)
+
+			if (!fileStats.isDirectory()) return;
+			if (fileName.startsWith(".")) return;
+
+			loadPocketCards(`${dir}/${item}`)
+			.then(cards => {
+				pocketArr.push({ name: item, cards: cards})
+			})
+		})
+	})
+
+	return pocketArr;
+}
+
+async function loadPocketCards(dir :string): Promise<Card[]> {
+	const cardArr: Card[] = []
+
+	readdir(dir, (err, items: string[]) => {
+		items.forEach(item => {
+			const filePath = `${dir}/${item}`;
+
+			let fileStats = lstatSync("/")
+			if (!filePath.includes(".DS_Store")) fileStats = lstatSync(filePath)
+
+			//const fileStats = lstatSync(filePath)
+			const fileExt = extname(filePath)
+			const fileName = basename(filePath, fileExt)
+
+			if (fileStats.isDirectory()) return;
+			if (fileName.startsWith(".")) return;
+
+			if (fileName.startsWith(".")) return;
+
+			cardArr.push({ name: fileName, path: filePath });
+		})
+	})
+
+	return cardArr
+}
+
+/*
 export async function fetchFiles() {
 	const cardArr: Array<CardItem> = []
 
@@ -14,6 +72,8 @@ export async function fetchFiles() {
 			const fileStats = lstatSync(filePath)
 
 			if (fileStats.isDirectory()) {
+				const cardSubArr: Array<Array<CardItem> = []
+
 				readdir(environment.supportPath + topLevelItem, (err, subLevelItems: string[]) => {
 					subLevelItems.forEach(subLevelItem => {
 						const subFilePath = `${environment.supportPath}/${topLevelItem}/${subLevelItem}`
@@ -22,7 +82,7 @@ export async function fetchFiles() {
 						const subFileName = basename(subFilePath, subFileExt)
 
 						if (subFileStats.isDirectory()) return;
-						cardArr.push({ name: subFileName, path: subFilePath, folder: topLevelItem})
+						cardSubArr.push({ name: subFileName, path: subFilePath, folder: topLevelItem})
 					})
 				})
 			} else {
@@ -37,6 +97,7 @@ export async function fetchFiles() {
 
 	return cardArr
 }
+*/
 
 export function createCard(values: CardForm) {
 	console.log(`Created ${values.name}`)
