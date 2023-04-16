@@ -1,18 +1,29 @@
-import { environment } from "@raycast/api";
+import { environment, getPreferenceValues } from "@raycast/api";
 
 import { basename, extname } from "path";
 import { lstatSync, readdirSync } from "fs";
 
-import { Pocket, Card } from "./types"
+import { Pocket, Card, Preferences } from "./types"
+
+export const walletPath = getWalletPath();
+
+function getWalletPath() {
+	const preferences = getPreferenceValues<Preferences>()
+	if (preferences.walletDirectory) {
+		const definedDir = lstatSync(preferences.walletDirectory);
+		if (definedDir.isDirectory()) return preferences.walletDirectory;
+	}
+	return environment.supportPath;
+}
 
 export async function fetchFiles(dir: string): Promise<Pocket[]> {
 	const pocketArr: Pocket[] = []
 
 	loadPocketCards(dir)
 	.then(cards => {
-		pocketArr.push({ cards: cards })
+		if (cards.length > 0) pocketArr.push({ cards: cards });
 	})
-	const items = readdirSync(environment.supportPath)
+	const items = readdirSync(walletPath)
 	items.forEach(item => {
 		const filePath = `${dir}/${item}`
 		const fileStats = lstatSync(filePath)

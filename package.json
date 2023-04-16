@@ -18,6 +18,15 @@
       "mode": "view"
     }
   ],
+  "preferences": [
+    {
+      "name": "walletDirectory",
+      "title": "Wallet Directory",
+      "description": "Path to load Wallet from. Leave blank for default.",
+      "type": "directory",
+      "required": false
+    }
+  ],
   "dependencies": {
     "@raycast/api": "^1.49.3",
     "@raycast/utils": "^1.5.2"

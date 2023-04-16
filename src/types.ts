@@ -8,6 +8,6 @@ export type Card = {
     path: string
 }
 
-export interface CardForm {
-    name: string
+export interface Preferences {
+    walletDirectory?: string,
 }

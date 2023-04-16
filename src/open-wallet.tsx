@@ -1,9 +1,10 @@
-import { environment, Action, ActionPanel, Grid } from "@raycast/api";
+import { openExtensionPreferences, ActionPanel, Action, Grid, Icon } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 
-import { fetchFiles } from "./utils";
-import { Card } from "./types";
 import { ReactNode } from "react";
+
+import { walletPath, fetchFiles } from "./utils";
+import { Card } from "./types";
 
 export default function Command() {
 	const { isLoading, data } = usePromise(loadGridComponents);
@@ -16,7 +17,7 @@ export default function Command() {
 			navigationTitle="Image Wallet"
 			searchBarPlaceholder="Search Cards..."
 			actions={
-				loadEditAction()
+				loadEditActions()
 			  }
 		>
 			{ data }
@@ -27,7 +28,7 @@ export default function Command() {
 async function loadGridComponents() {
 	const outPockets:ReactNode[] = []
 
-	fetchFiles(environment.supportPath).then(pockets => {
+	fetchFiles(walletPath).then(pockets => {
 		pockets.forEach((pocket) => { outPockets.push(
 			<Grid.Section title={pocket.name} key={pocket.name || "unsorted"}>
 				{pocket.cards.map(card => (
@@ -51,16 +52,22 @@ function loadCardActions(item: Card) { return (
 			<Action.Paste content={{ file: item.path }} />
 			<Action.CopyToClipboard content={{ file: item.path }} />
 		</ActionPanel.Section>
-		{loadEditAction()}
+		{loadEditActions()}
 	</ActionPanel>
 )}
 
-function loadEditAction() { return (
+function loadEditActions() { return (
 	<ActionPanel.Section>
 		<Action.ShowInFinder
-			title="Edit Wallet"
-			shortcut={{modifiers: ["cmd"], key: "e"}}
-			path={environment.supportPath}
+			title="Open Wallet in Finder"
+			shortcut={{ modifiers: ["cmd"], key: "e" }}
+			path={walletPath}
+		/>
+		<Action
+			title="Change Wallet Directory"
+			icon={Icon.Folder}
+			shortcut={{ modifiers: ["cmd", "shift"], key: "e" }}
+			onAction={openExtensionPreferences}
 		/>
 	</ActionPanel.Section>
 )}
