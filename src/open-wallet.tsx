@@ -17,7 +17,9 @@ export default function Command() {
 			navigationTitle="Image Wallet"
 			searchBarPlaceholder="Search Cards..."
 			actions={
-				loadEditActions()
+				<ActionPanel>
+					{ loadEditActions() }
+				</ActionPanel>
 			  }
 		>
 			{ data }
