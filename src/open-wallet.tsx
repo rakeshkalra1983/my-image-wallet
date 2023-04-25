@@ -47,7 +47,7 @@ async function loadGridComponents(sortedPocket?:string) { return(
 		if (sortedPocket) {
 			pockets.forEach(pocket => {
 				if (pocket.name == sortedPocket) {
-					pocketNodes.push(loadPocketNodes(pocket));
+					pocketNodes.push(loadPocketNodes(pocket, {hideTitle: true}));
 				}
 			})
 		} else {
@@ -79,9 +79,9 @@ function loadGridDropdownNodes(pockets: Pocket[]) { return ([
 	</Grid.Dropdown.Section>
 ])}
 
-function loadPocketNodes(pocket:Pocket) { return(
+function loadPocketNodes(pocket:Pocket, ops?:{ hideTitle?:boolean }) { return(
 	<Grid.Section
-		title={pocket.name || "Unsorted"}
+		title={ ops?.hideTitle ? undefined : pocket.name || undefined }
 		key={pocket.name || "unsorted"}
 	>
 		{pocket.cards.map(card => (
