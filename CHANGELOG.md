@@ -1,3 +1,5 @@
-# Image Wallet Changelog
+# Unage Wallet Changelog
 
-## [Initial Version] - 2023-04-12
+## [1.0] - 2023-04-25
+
+- Initial release of Image Wallet!

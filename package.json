@@ -12,8 +12,8 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "open-wallet",
-      "title": "Open Wallet",
+      "name": "image-wallet",
+      "title": "Image Wallet",
       "description": "Browse and view your saved images.",
       "mode": "view"
     }

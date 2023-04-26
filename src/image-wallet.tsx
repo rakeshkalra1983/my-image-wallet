@@ -15,7 +15,6 @@ export default function Command() {
 			columns={5}
 			isLoading={isLoading}
 			inset={Grid.Inset.Large}
-			navigationTitle="Image Wallet"
 			searchBarPlaceholder="Search Cards..."
 			searchBarAccessory={
 				<Grid.Dropdown
@@ -30,7 +29,7 @@ export default function Command() {
 			}
 			actions={
 				<ActionPanel>
-					{ loadEditActionNodes() }
+					{ loadGenericActionNodes() }
 				</ActionPanel>
 			  }
 		>
@@ -100,22 +99,22 @@ export default function Command() {
 				<Action.Paste content={{ file: item.path }} />
 				<Action.CopyToClipboard content={{ file: item.path }} />
 			</ActionPanel.Section>
-			{loadEditActionNodes()}
+			{loadGenericActionNodes()}
 		</ActionPanel>
 	)}
 
-	function loadEditActionNodes() { return (
+	function loadGenericActionNodes() { return (
 		<ActionPanel.Section>
+			<Action.ShowInFinder
+				title="Edit Wallet"
+				shortcut={{ modifiers: ["cmd"], key: "e" }}
+				path={walletPath}
+			/>
 			<Action
-				title="Reload"
+				title="Reload Wallet"
 				icon={Icon.ArrowClockwise}
 				shortcut={{ modifiers: ["cmd"], key: "r" }}
 				onAction={revalidate}
-			/>
-			<Action.ShowInFinder
-				title="Open Wallet in Finder"
-				shortcut={{ modifiers: ["cmd"], key: "e" }}
-				path={walletPath}
 			/>
 			<Action
 				title="Change Wallet Directory"
