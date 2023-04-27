@@ -45,6 +45,13 @@ export default function Command() {
           }
         });
       } else {
+        pocketNodes.push(
+          <Grid.EmptyView
+            title="No Cards Found"
+            key="Empty View"
+            description="Use ⌘E to add images to the Wallet directory!"
+          />
+        )
         pockets.forEach((pocket) => {
           pocketNodes.push(loadPocketNodes(pocket));
         });
@@ -75,7 +82,7 @@ export default function Command() {
     return (
       <Grid.Section title={ops?.hideTitle ? undefined : pocket.name || undefined} key={pocket.name || "unsorted"}>
         {pocket.cards.map((card) => (
-          <Grid.Item key={card.path} content={card.path} title={card.name} actions={loadCardActionNodes(card)} />
+          <Grid.Item key={card.path} content={card.path} title={card.name} actions={loadCardActionNodes(card)} quickLook={{ name: card.name, path: card.path }}/>
         ))}
       </Grid.Section>
     );
@@ -87,6 +94,7 @@ export default function Command() {
         <ActionPanel.Section>
           <Action.Paste content={{ file: item.path }} />
           <Action.CopyToClipboard content={{ file: item.path }} />
+          <Action.ToggleQuickLook shortcut={{ modifiers: ["cmd"], key: "y" }}/>
         </ActionPanel.Section>
         {loadGenericActionNodes()}
       </ActionPanel>
