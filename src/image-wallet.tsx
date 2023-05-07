@@ -15,7 +15,7 @@ export default function Command() {
       columns={5}
       isLoading={isLoading}
       inset={Grid.Inset.Large}
-      searchBarPlaceholder="Search Cards..."
+      searchBarPlaceholder={`Search ${data?.cardCount} Cards...`}
       searchBarAccessory={
         <Grid.Dropdown
           tooltip="Select Pocket"
@@ -37,11 +37,13 @@ export default function Command() {
     return fetchFiles(walletPath).then((pockets) => {
       const dropdownNodes = loadGridDropdownNodes(pockets);
       const pocketNodes: ReactNode[] = [];
+      let cardCount = 0;
 
       if (sortedPocket) {
-        pockets.forEach((pocket) => {
+        pockets.forEach(pocket => {
           if (pocket.name == sortedPocket) {
             pocketNodes.push(loadPocketNodes(pocket, { hideTitle: true }));
+            cardCount += pocket.cards.length
           }
         });
       } else {
@@ -54,10 +56,11 @@ export default function Command() {
         )
         pockets.forEach((pocket) => {
           pocketNodes.push(loadPocketNodes(pocket));
+          cardCount += pocket.cards.length
         });
       }
 
-      return { pocketNodes, dropdownNodes };
+      return { pocketNodes, dropdownNodes, cardCount };
     });
   }
 
