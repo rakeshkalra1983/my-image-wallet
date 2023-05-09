@@ -15,7 +15,7 @@ export default function Command() {
       columns={5}
       isLoading={isLoading}
       inset={Grid.Inset.Large}
-      searchBarPlaceholder={`Search ${data?.cardCount} Cards...`}
+      searchBarPlaceholder={`Search ${data?.cardCount || 0} Cards...`}
       searchBarAccessory={
         <Grid.Dropdown
           tooltip="Select Pocket"
