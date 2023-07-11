@@ -62,7 +62,7 @@ async function loadPocketCards(dir: string): Promise<Card[]> {
       if (fileStats.isDirectory()) return;
       if (fileName.startsWith(".")) return;
 
-      const videoExts = [".mov", ".mp4"];
+      const videoExts = [".mov", ".mp4", ".m4v", ".mts", ".3gp", ".m2ts", ".m2v", ".mpeg", ".mpg", ".mts", ".vob"];
       const imageExts = [
         ".png",
         ".jpg",
@@ -118,6 +118,7 @@ export function purgePreviews() {
 }
 
 async function generateVideoPreview(inputPath: string, outputPath: string): Promise<string | undefined> {
+  // console.log(inputPath)
   const previewPath = await runJxa(
     `
       ObjC.import("objc");
