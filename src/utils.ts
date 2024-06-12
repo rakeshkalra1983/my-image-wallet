@@ -1,4 +1,4 @@
-import { environment, getPreferenceValues } from "@raycast/api";
+import { Toast, environment, getPreferenceValues, showToast } from "@raycast/api";
 import { runJxa } from "run-jxa";
 
 import { basename, extname } from "path";
@@ -27,6 +27,19 @@ export function fetchPocketNames(): string[] {
 
     if (!fileStats.isDirectory()) return;
     if (fileName.startsWith(".")) return;
+
+    try {
+      readdirSync(filePath);
+    } catch (e) {
+      if (getPreferenceValues<Preferences>().suppressFolderReadErrors) return;
+      showToast({
+        style: Toast.Style.Failure,
+        title: `The "${fileName}" directory could not be read`,
+        message: "Suppress this error in extension preferences.",
+      });
+
+      return;
+    }
 
     return item;
   });
@@ -118,7 +131,6 @@ export function purgePreviews() {
 }
 
 async function generateVideoPreview(inputPath: string, outputPath: string): Promise<string | undefined> {
-  // console.log(inputPath)
   const previewPath = await runJxa(
     `
       ObjC.import("objc");
