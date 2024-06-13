@@ -39,7 +39,6 @@ export function fetchPocketNames(): string[] {
 
     const fileExt = extname(filePath);
     const fileName = basename(filePath, fileExt);
-    // const fileStats = lstatSync(filePath);
 
     if (!fileStats.isDirectory()) return;
     if (fileName.startsWith(".")) return;
@@ -82,7 +81,7 @@ async function loadPocketCards(dir: string): Promise<Card[]> {
           title: `${filePath} could not be read`,
           message: "Suppress this error in extension preferences.",
         });
-    
+
         return [];
       }
 
