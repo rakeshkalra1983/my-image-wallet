@@ -64,7 +64,7 @@ export default function Command() {
       }
 
       if (pocket) {
-        pocketNodes.push(loadPocketNodes(pocket, { hideTitle: true }));
+        pocketNodes.push(loadPocketNodes(pocket, { hideTitle: false }));
         cardCount = pocket.cards.length;
       }
     } else {
@@ -93,7 +93,7 @@ export default function Command() {
             key={card.path}
             content={card.preview ?? { fileIcon: card.path }}
             title={card.name.replace(":", "/")}
-            keywords={[card.name]}
+            keywords={[card.name, card.name + ' ' + card.name, card.name.replace(/[aeiouAEIOU]/g, '') + ' ' + card.name.replace(/[aeiouAEIOU]/g, '')]}
             actions={loadCardActionNodes(card)}
             quickLook={{ name: card.name, path: card.path }}
           />

@@ -130,11 +130,13 @@ async function loadPocketCards(dir: string): Promise<Card[]> {
         previewPath = `${PREVIEW_DIR}/${dir.replaceAll("/", "-")}-${item}.tiff`;
 
         if (!existsSync(previewPath)) await generateVideoPreview(filePath, previewPath);
+        cardArr.push({ name: fileName, path: filePath, preview: previewPath });
       } else if (imageExts.includes(fileExt)) {
         previewPath = filePath;
+        cardArr.push({ name: fileName, path: filePath, preview: previewPath });
       }
 
-      cardArr.push({ name: fileName, path: filePath, preview: previewPath });
+
     })
   );
 
