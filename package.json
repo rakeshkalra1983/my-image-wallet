@@ -52,6 +52,32 @@
       "type": "checkbox",
       "required": false,
       "default": false
+    },
+    {
+      "name": "googleApiKey",
+      "label": "Google API Key",
+      "title": "Google API Key",
+      "description": "Your Google API key for Custom Search API.",
+      "type": "password",
+      "required": false,
+      "default": ""
+    },
+    {
+      "name": "googleSearchEngineId",
+      "label": "Google Search Engine ID",
+        "title": "Google Search Engine ID",
+      "description": "Your Google Custom Search Engine ID for image search.",
+      "type": "textfield",
+      "required": false,
+      "default": ""
+    },
+    {
+      "name": "enableGoogleImagesTab",
+      "title": "Enable Google Images Tab",
+      "description": "Show the Google Images search option in the extension.",
+      "type": "checkbox",
+      "required": false,
+      "default": true
     }
   ],
   "dependencies": {

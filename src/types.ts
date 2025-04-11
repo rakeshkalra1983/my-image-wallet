@@ -14,4 +14,8 @@ export interface Preferences {
   videoPreviews: boolean;
   rememberPocketFilter: boolean;
   suppressReadErrors?: boolean;
+  googleApiKey: string;
+  googleSearchEngineId: string;
+  enableGoogleImagesTab: boolean;
 }
+
