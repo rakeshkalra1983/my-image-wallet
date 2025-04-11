@@ -7,17 +7,15 @@ import {
   getPreferenceValues,
   showHUD,
 } from "@raycast/api";
-import { usePromise } from "@raycast/utils";
 import { useState, useEffect } from "react";
 import Fuse from "fuse.js";
 import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
+import { usePromise } from "@raycast/utils";
 
 import { walletPath, fetchFiles, fetchPocketNames, purgePreviews } from "./utils";
 import { Card, Pocket, Preferences } from "./types";
-
-let savedPockets: Pocket[];
 
 /** Helper: run AppleScript via Node’s exec. */
 function runAppleScript(script: string): Promise<string> {
@@ -43,7 +41,6 @@ async function downloadImageToWallet(url: string, imageName?: string): Promise<s
   const arrayBuffer = await response.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  // Attempt to get a file extension from the URL. Default to .jpg
   let ext = ".jpg";
   try {
     const urlObj = new URL(url);
@@ -55,18 +52,15 @@ async function downloadImageToWallet(url: string, imageName?: string): Promise<s
     // fallback to .jpg
   }
 
-  // Create "google" subfolder if not existing
   const googleDir = path.join(walletPath, "google");
   if (!fs.existsSync(googleDir)) {
     fs.mkdirSync(googleDir, { recursive: true });
   }
 
-  // If we got an imageName, sanitize it for use as a filename
   let baseFilename = `google_image_${Date.now()}${ext}`;
   if (imageName && imageName.trim() !== "") {
-    // For safety, remove slashes, colons, etc.
     const safeName = imageName.replace(/[\\/:"*?<>|]+/g, "_").trim();
-    baseFilename = safeName + ext; // e.g. "10 Real-World Applications.jpg"
+    baseFilename = safeName + ext;
   }
 
   const destFile = path.join(googleDir, baseFilename);
@@ -74,16 +68,12 @@ async function downloadImageToWallet(url: string, imageName?: string): Promise<s
   return destFile;
 }
 
-
 /**
  * UnifiedGooglePasteAction Component
  *
- * When the user clicks the action, it:
- * - Shows "Downloading Image..."
- * - Downloads the image from the remote URL into the wallet's "google" folder.
- * - Then shows "Pasting Image..." and automatically runs AppleScript to paste the image.
- *
- * No extra click is required—the paste action occurs automatically once the download completes.
+ * When the user clicks the action, it downloads the image,
+ * saves it into the wallet’s "google" subfolder, and then uses
+ * AppleScript to paste the image.
  */
 function UnifiedGooglePasteAction({ url, imageName }: { url: string; imageName: string }) {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -92,10 +82,8 @@ function UnifiedGooglePasteAction({ url, imageName }: { url: string; imageName: 
     setIsDownloading(true);
     await showHUD("Downloading Image...");
     try {
-      // Pass imageName along
       const filePath = await downloadImageToWallet(url, imageName);
       await showHUD("Pasting Image... from " + filePath);
-      // Then automatically load into clipboard & paste
       const script = `
         try
             set theImage to (read (POSIX file "${filePath}") as JPEG picture)
@@ -119,13 +107,10 @@ function UnifiedGooglePasteAction({ url, imageName }: { url: string; imageName: 
   }
 
   if (isDownloading) {
-    return <Action title="Downloading Image..." icon={Icon.Clock} onAction={() => { console.log("Downloading..."); }} />;
+    return <Action title="Downloading Image..." icon={Icon.Clock} onAction={() => {console.log("Downloading Image...")}} />;
   }
   return <Action title="Download & Paste" icon={Icon.Clipboard} onAction={handleDownload} />;
 }
-
-
-/* ---------- The Rest of your my-image-wallet.tsx remains largely the same ---------- */
 
 export default function Command() {
   const preferences = getPreferenceValues<Preferences>();
@@ -133,43 +118,37 @@ export default function Command() {
   const [searchMode, setSearchMode] = useState<"local" | "google">("local");
   const [searchText, setSearchText] = useState("");
   const [filteredCards, setFilteredCards] = useState<Card[]>([]);
+  // Use state for local pockets (instead of a global variable)
+  const [localPockets, setLocalPockets] = useState<Pocket[]>([]);
 
-  // usePromise for local images (only when searchMode is "local")
+  // Google search state management
+  const [googleCards, setGoogleCards] = useState<Card[]>([]);
+  const [googlePage, setGooglePage] = useState(0); // tracks the last loaded page
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // usePromise for local images (when searchMode is "local")
   const {
     isLoading: isGridLoading,
     data: gridData,
     revalidate: revalidateGrid,
   } = usePromise(
-    (pocket: string, searchMode: "local" | "google") => {
-      if (searchMode !== "local") return Promise.resolve({ cardCount: 0 });
-      return loadGridComponents(pocket);
+    (selectedPocket: string, mode: "local" | "google") => {
+      if (mode !== "local") return Promise.resolve({ cardCount: 0 });
+      return loadGridComponents(selectedPocket);
     },
     [pocket, searchMode]
   );
 
-  // usePromise for Google images (only when searchMode is "google")
-  const {
-    isLoading: isGoogleLoading,
-    data: googleData,
-    revalidate: revalidateGoogle,
-  } = usePromise(
-    (searchText: string, searchMode: "local" | "google") => {
-      if (searchMode !== "google" || !searchText)
-        return Promise.resolve({ items: [], cardCount: 0 });
-      return loadGoogleImages(searchText);
-    },
-    [searchText, searchMode]
-  );
-
+  // Fuzzy search filtering for local images using state-based localPockets.
   useEffect(() => {
     if (searchMode !== "local") return;
-    if (!savedPockets) return;
+    if (!localPockets || localPockets.length === 0) return;
 
     let cardsToFilter: Card[] = [];
     if (pocket === "") {
-      cardsToFilter = savedPockets.flatMap((p) => p.cards);
+      cardsToFilter = localPockets.flatMap((p) => p.cards);
     } else {
-      const found = savedPockets.find((p) => p.name === pocket);
+      const found = localPockets.find((p) => p.name === pocket);
       if (found) {
         cardsToFilter = found.cards;
       }
@@ -209,14 +188,71 @@ export default function Command() {
       return (a.score ?? 1) - (b.score ?? 1);
     });
     setFilteredCards(sorted.map((r) => r.item));
-  }, [searchText, pocket, searchMode]);
+  }, [searchText, pocket, searchMode, localPockets]);
 
+  // When search text changes and mode is Google, load initial 3 pages (30 images total)
+  useEffect(() => {
+    const fetchInitialGooglePages = async () => {
+      setIsGoogleLoading(true);
+      setGoogleCards([]);
+      let newCards: Card[] = [];
+      for (let page = 1; page <= 3; page++) {
+        try {
+          const pageCards = await loadGoogleImages(searchText, page);
+          newCards = newCards.concat(pageCards);
+        } catch (error: any) {
+          await showHUD("Error loading Google images: " + error.message);
+        }
+      }
+      setGoogleCards(newCards);
+      setGooglePage(3);
+      setIsGoogleLoading(false);
+    };
+    if (searchMode === "google" && searchText.trim() !== "") {
+      fetchInitialGooglePages();
+    }
+  }, [searchText, searchMode]);
+
+  // Load More handler for Google images (loads an extra 10 images each time)
+  async function handleLoadMoreGoogle() {
+    const nextPage = googlePage + 1;
+    setIsGoogleLoading(true);
+    try {
+      const newItems = await loadGoogleImages(searchText, nextPage);
+      setGoogleCards((prev) => [...prev, ...newItems]);
+      setGooglePage(nextPage);
+    } catch (error: any) {
+      await showHUD("Error loading Google images: " + error.message);
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
+
+  // Revalidate refetches images based on the current mode.
   async function revalidate() {
     if (searchMode === "local") {
-      savedPockets = await fetchFiles();
+      const pockets = await fetchFiles();
+      setLocalPockets(pockets);
       revalidateGrid();
-    } else if (searchMode === "google") {
-      revalidateGoogle();
+    } else if (searchMode === "google" && searchText.trim() !== "") {
+      setGooglePage(0);
+      setGoogleCards([]);
+      const fetchInitialGooglePages = async () => {
+        setIsGoogleLoading(true);
+        let newCards: Card[] = [];
+        for (let page = 1; page <= 3; page++) {
+          try {
+            const pageCards = await loadGoogleImages(searchText, page);
+            newCards = newCards.concat(pageCards);
+          } catch (error: any) {
+            await showHUD("Error loading Google images: " + error.message);
+          }
+        }
+        setGoogleCards(newCards);
+        setGooglePage(3);
+        setIsGoogleLoading(false);
+      };
+      fetchInitialGooglePages();
     }
   }
 
@@ -260,17 +296,26 @@ export default function Command() {
         ) : (
           <Grid.EmptyView title="No Cards Found" description="Press ⌘E to add images!" />
         )
-      ) : googleData && googleData.cardCount > 0 ? (
+      ) : googleCards.length > 0 ? (
         <Grid.Section title="Google Images">
-          {googleData.items.map((item: Card) => (
+          {googleCards.map((item: Card) => (
             <Grid.Item
-              key={item.path}
+              key={item.path + Math.random()}
               content={item.preview ? item.preview : { source: item.path }}
               title={item.name}
               actions={loadGoogleActionNodes(item)}
               quickLook={{ name: item.name, path: item.path }}
             />
           ))}
+          <Grid.Item
+            title="Load More"
+            content={{ source: Icon.ArrowClockwise }}
+            actions={
+              <ActionPanel>
+                <Action title="Load More" icon={Icon.ArrowClockwise} onAction={handleLoadMoreGoogle} />
+              </ActionPanel>
+            }
+          />
         </Grid.Section>
       ) : (
         <Grid.EmptyView title="No Results" description="Try different search text for Google Images." />
@@ -315,14 +360,16 @@ export default function Command() {
   }
 
   async function loadGridComponents(selectedPocket: string) {
-    if (!savedPockets) {
-      savedPockets = await fetchFiles();
+    let pockets = localPockets;
+    if (!pockets || pockets.length === 0) {
+      pockets = await fetchFiles();
+      setLocalPockets(pockets);
     }
     let allCards: Card[] = [];
     if (selectedPocket === "") {
-      allCards = savedPockets.flatMap((p) => p.cards);
+      allCards = pockets.flatMap((p) => p.cards);
     } else {
-      const found = savedPockets.find((p) => p.name === selectedPocket);
+      const found = pockets.find((p) => p.name === selectedPocket);
       if (found) {
         allCards = found.cards;
       }
@@ -336,13 +383,19 @@ export default function Command() {
     return pocketNames;
   }
 
-  async function loadGoogleImages(query: string) {
+  /**
+   * Modified loadGoogleImages function.
+   * It accepts a page number and uses the "start" parameter to fetch 10 images per page.
+   * Also includes the 'imgSize=large' parameter so that images are larger.
+   */
+  async function loadGoogleImages(query: string, page: number): Promise<Card[]> {
     const { googleApiKey, googleSearchEngineId } = preferences;
     if (!googleApiKey || !googleSearchEngineId) {
       throw new Error("Google API Key and Search Engine ID must be set in Preferences.");
     }
+    const startIndex = (page - 1) * 10 + 1;
     const response = await fetch(
-      `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleSearchEngineId}&searchType=image&q=${encodeURIComponent(query)}`
+      `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleSearchEngineId}&searchType=image&start=${startIndex}&imgSize=large&q=${encodeURIComponent(query)}`
     );
     const data = await response.json();
     const items = (data.items || []).map((item: any) => ({
@@ -350,7 +403,7 @@ export default function Command() {
       name: item.title,
       preview: item.link,
     }));
-    return { items, cardCount: items.length };
+    return items;
   }
 
   function loadCardActionNodes(item: Card) {
@@ -391,17 +444,11 @@ export default function Command() {
         </ActionPanel.Section>
         <ActionPanel.Section>
           <Action.OpenInBrowser title="Open Image" url={item.path} />
-          <Action
-            title="Refresh"
-            icon={Icon.ArrowClockwise}
-            shortcut={{ modifiers: ["cmd"], key: "r" }}
-            onAction={revalidate}
-          />
+          <Action title="Refresh" icon={Icon.ArrowClockwise} shortcut={{ modifiers: ["cmd"], key: "r" }} onAction={revalidate} />
         </ActionPanel.Section>
       </ActionPanel>
     );
   }
-
 
   function loadGoogleGenericActionNodes() {
     return (
