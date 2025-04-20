@@ -263,11 +263,12 @@ export default function Command() {
 
   return (
     <Grid
-      columns={5}
+      columns={6}
       filtering={false}
+      fit={Grid.Fit.Contain}
       onSearchTextChange={setSearchText}
       isLoading={searchMode === "local" ? isGridLoading : isGoogleLoading}
-      inset={Grid.Inset.Large}
+      inset={Grid.Inset.Zero}
       searchBarPlaceholder={
         searchMode === "local"
           ? `Search ${gridData?.cardCount || 0} Card${gridData?.cardCount === 1 ? "" : "s"}`
