@@ -1,7 +1,7 @@
 import { Toast, environment, getPreferenceValues, showToast } from "@raycast/api";
 import { runJxa } from "run-jxa";
 
-import { basename, extname } from "path";
+import { basename, extname, join } from "path";
 import { existsSync, lstatSync, mkdirSync, readdirSync, rmSync } from "fs";
 
 import { Pocket, Card, Preferences } from "./types";
@@ -59,6 +59,25 @@ export async function fetchFiles(): Promise<Pocket[]> {
   );
 
   return pocketArr;
+}
+
+export async function fetchFileList(): Promise<Pocket[]> {
+  return fetchPocketNames().map((pocketName) => {
+    const pocketDir = join(walletPath, pocketName);
+    const cards: Card[] = readdirSync(pocketDir)
+      .filter((file) => {
+        // skip dot‑files and sub‑dirs
+        if (file.startsWith(".")) return false;
+        const stats = lstatSync(join(pocketDir, file));
+        return stats.isFile();
+      })
+      .map((file) => ({
+        name: basename(file, extname(file)),
+        path: join(pocketDir, file),
+        // no preview field here
+      }));
+    return { name: pocketName, cards };
+  });
 }
 
 async function loadPocketCards(dir: string): Promise<Card[]> {
