@@ -16,3 +16,13 @@ export interface Preferences {
   suppressReadErrors?: boolean;
 }
 
+export interface HardcodedPath {
+  path: string;
+  nameRegex: string;
+  pocketName: string;
+}
+
+export interface Config {
+  hardcodedPaths: HardcodedPath[];
+}
+

@@ -11,7 +11,6 @@ import { useState, useEffect, useMemo } from "react";
 import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
-import { usePromise } from "@raycast/utils";
 
 import { walletPath, fetchFiles, fetchPocketNames, purgePreviews, fetchFileList } from "./utils";
 import { Card, Pocket, Preferences } from "./types";

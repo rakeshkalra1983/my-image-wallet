@@ -1,0 +1,9 @@
+{
+  "hardcodedPaths": [
+    {
+      "path": "/Users/rkalra/Library/Mobile Documents/iCloud~md~obsidian/Documents/Work Vault/Attachments",
+      "nameRegex": ".*doodle\\.(png|jpg|jpeg)$",
+      "pocketName": "Attachments"
+    }
+  ]
+}

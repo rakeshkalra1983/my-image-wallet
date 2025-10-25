@@ -2,13 +2,133 @@ import { Toast, environment, getPreferenceValues, showToast } from "@raycast/api
 import { runJxa } from "run-jxa";
 
 import { basename, extname, join } from "path";
-import { existsSync, lstatSync, mkdirSync, readdirSync, rmSync } from "fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, rmSync, readFileSync } from "fs";
 
-import { Pocket, Card, Preferences } from "./types";
+import { Pocket, Card, Preferences, Config, HardcodedPath } from "./types";
 
 const PREVIEW_DIR = `${environment.supportPath}/.previews`;
 
 export const walletPath = getWalletPath();
+
+// Load config file
+export function loadConfig(): Config | null {
+  try {
+    // Try multiple possible paths for the config file
+    const possiblePaths = [
+      join(__dirname, "config.json"),
+      join(process.cwd(), "src", "config.json"),
+      join(process.cwd(), "config.json"),
+      "/Users/rkalra/codebase/personal/Raycast Utils/my-image-wallet/src/config.json"
+    ];
+    
+    for (const configPath of possiblePaths) {
+      if (existsSync(configPath)) {
+        console.log("Loading config from:", configPath);
+        const configData = readFileSync(configPath, "utf8");
+        return JSON.parse(configData) as Config;
+      }
+    }
+    
+    console.log("Config file not found in any of these paths:", possiblePaths);
+  } catch (error) {
+    console.error("Error loading config file:", error);
+  }
+  return null;
+}
+
+// Load images from hardcoded paths with regex filtering
+export async function loadHardcodedPathImages(hardcodedPath: HardcodedPath): Promise<Card[]> {
+  const cards: Card[] = [];
+  
+  try {
+    if (!existsSync(hardcodedPath.path)) {
+      return cards;
+    }
+
+    const items = readdirSync(hardcodedPath.path);
+    const regex = new RegExp(hardcodedPath.nameRegex, 'i'); // Case insensitive
+
+    await Promise.all(
+      items.map(async (item) => {
+        if (item.startsWith(".")) return;
+
+        const filePath = join(hardcodedPath.path, item);
+        let fileStats;
+
+        try {
+          fileStats = lstatSync(filePath);
+        } catch (e) {
+          if (getPreferenceValues<Preferences>().suppressReadErrors) return;
+          showToast({
+            style: Toast.Style.Failure,
+            title: `${filePath} could not be read`,
+            message: "Suppress this error in extension preferences.",
+          });
+          return;
+        }
+
+        if (fileStats.isDirectory()) return;
+
+        // Apply regex filter to filename
+        if (!regex.test(item)) return;
+
+        const fileExt = extname(filePath).toLowerCase();
+        const fileName = basename(filePath, fileExt);
+
+        const videoExts = [".mov", ".mp4", ".m4v", ".mts", ".3gp", ".m2ts", ".m2v", ".mpeg", ".mpg", ".mts", ".vob"];
+        const imageExts = [
+          ".png",
+          ".jpg",
+          "jpeg",
+          ".bmp",
+          ".dds",
+          ".exr",
+          ".gif",
+          ".hdr",
+          ".ico",
+          ".jpe",
+          ".pbm",
+          ".pfm",
+          ".pgm",
+          ".pict",
+          ".ppm",
+          ".psd",
+          ".sgi",
+          ".svg",
+          ".tga",
+          ".tiff",
+          ".webp",
+          ".cr2",
+          ".dng",
+          ".heic",
+          ".heif",
+          ".jp2",
+          ".nef",
+          ".orf",
+          ".raf",
+          ".rw2",
+        ];
+        let previewPath: string | undefined = undefined;
+
+        if (videoExts.includes(fileExt) && getPreferenceValues<Preferences>().videoPreviews) {
+          if (!existsSync(PREVIEW_DIR)) mkdirSync(PREVIEW_DIR);
+          previewPath = `${PREVIEW_DIR}/${hardcodedPath.path.replaceAll("/", "-")}-${item}.tiff`;
+
+          if (!existsSync(previewPath)) await generateVideoPreview(filePath, previewPath);
+          cards.push({ name: fileName, path: filePath, preview: previewPath });
+        } else if (imageExts.includes(fileExt)) {
+          previewPath = filePath;
+          cards.push({ name: fileName, path: filePath, preview: previewPath });
+        }
+      })
+    );
+
+    return cards.sort();
+  } catch (error) {
+    console.error(`Error loading hardcoded path ${hardcodedPath.path}:`, error);
+    return cards;
+  }
+}
 function getWalletPath() {
   const preferences = getPreferenceValues<Preferences>();
   if (preferences.walletDirectory) {
@@ -62,7 +182,10 @@ export async function fetchFiles(): Promise<Pocket[]> {
 }
 
 export async function fetchFileList(): Promise<Pocket[]> {
-  return fetchPocketNames().map((pocketName) => {
+  const pockets: Pocket[] = [];
+  
+  // Load regular wallet pockets
+  const regularPockets = fetchPocketNames().map((pocketName) => {
     const pocketDir = join(walletPath, pocketName);
     const cards: Card[] = readdirSync(pocketDir)
       .filter((file) => {
@@ -78,6 +201,29 @@ export async function fetchFileList(): Promise<Pocket[]> {
       }));
     return { name: pocketName, cards };
   });
+  
+  pockets.push(...regularPockets);
+  
+  // Load hardcoded paths from config
+  const config = loadConfig();
+  console.log("Config loaded:", config);
+  if (config && config.hardcodedPaths) {
+    console.log("Processing hardcoded paths:", config.hardcodedPaths.length);
+    await Promise.all(
+      config.hardcodedPaths.map(async (hardcodedPath) => {
+        console.log("Loading images from:", hardcodedPath.path);
+        const cards = await loadHardcodedPathImages(hardcodedPath);
+        console.log(`Found ${cards.length} images in ${hardcodedPath.pocketName}`);
+        if (cards.length > 0) {
+          pockets.push({ name: hardcodedPath.pocketName, cards });
+        }
+      })
+    );
+  } else {
+    console.log("No config or hardcoded paths found");
+  }
+  
+  return pockets;
 }
 
 async function loadPocketCards(dir: string): Promise<Card[]> {
