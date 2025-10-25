@@ -192,7 +192,18 @@ export async function fetchFileList(): Promise<Pocket[]> {
         // skip dot‑files and sub‑dirs
         if (file.startsWith(".")) return false;
         const stats = lstatSync(join(pocketDir, file));
-        return stats.isFile();
+        if (!stats.isFile()) return false;
+        
+        // Filter by supported image and video extensions
+        const fileExt = extname(file).toLowerCase();
+        const videoExts = [".mov", ".mp4", ".m4v", ".mts", ".3gp", ".m2ts", ".m2v", ".mpeg", ".mpg", ".mts", ".vob"];
+        const imageExts = [
+          ".png", ".jpg", "jpeg", ".bmp", ".dds", ".exr", ".gif", ".hdr", ".ico", ".jpe",
+          ".pbm", ".pfm", ".pgm", ".pict", ".ppm", ".psd", ".sgi", ".svg", ".tga", ".tiff",
+          ".webp", ".cr2", ".dng", ".heic", ".heif", ".jp2", ".nef", ".orf", ".raf", ".rw2",
+        ];
+        
+        return imageExts.includes(fileExt) || videoExts.includes(fileExt);
       })
       .map((file) => ({
         name: basename(file, extname(file)),
