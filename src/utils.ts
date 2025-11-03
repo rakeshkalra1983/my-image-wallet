@@ -4,7 +4,7 @@ import { runJxa } from "run-jxa";
 import { basename, extname, join } from "path";
 import { existsSync, lstatSync, mkdirSync, readdirSync, rmSync, readFileSync } from "fs";
 
-import { Pocket, Card, Preferences, Config, HardcodedPath } from "./types";
+import { Pocket, Card, Preferences, Config, HardcodedPath, Synonyms } from "./types";
 
 const PREVIEW_DIR = `${environment.supportPath}/.previews`;
 
@@ -34,6 +34,64 @@ export function loadConfig(): Config | null {
     console.error("Error loading config file:", error);
   }
   return null;
+}
+
+// Load synonyms file
+export function loadSynonyms(): Synonyms {
+  try {
+    // Try multiple possible paths for the synonyms file
+    const possiblePaths = [
+      join(__dirname, "synonyms.json"),
+      join(process.cwd(), "src", "synonyms.json"),
+      join(process.cwd(), "synonyms.json"),
+      "/Users/rkalra/codebase/personal/Raycast Utils/my-image-wallet/src/synonyms.json"
+    ];
+    
+    for (const synonymsPath of possiblePaths) {
+      if (existsSync(synonymsPath)) {
+        console.log("Loading synonyms from:", synonymsPath);
+        const synonymsData = readFileSync(synonymsPath, "utf8");
+        return JSON.parse(synonymsData) as Synonyms;
+      }
+    }
+    
+    console.log("Synonyms file not found in any of these paths:", possiblePaths);
+  } catch (error) {
+    console.error("Error loading synonyms file:", error);
+  }
+  return {};
+}
+
+// Expand search terms with synonyms
+export function expandSearchTerms(terms: string[], synonyms: Synonyms): string[] {
+  const expandedTerms = new Set<string>(terms);
+  
+  // For each search term, check if it has synonyms
+  terms.forEach(term => {
+    const lowerTerm = term.toLowerCase();
+    
+    // Check if this term is a key in synonyms
+    if (synonyms[lowerTerm]) {
+      // Add all synonyms for this term
+      synonyms[lowerTerm].forEach(synonym => {
+        expandedTerms.add(synonym.toLowerCase());
+      });
+    }
+    
+    // Also check if this term is a synonym itself, and add the key and other synonyms
+    Object.entries(synonyms).forEach(([key, synonymList]) => {
+      if (synonymList.includes(lowerTerm) || synonymList.some(s => s.toLowerCase() === lowerTerm)) {
+        // Add the key
+        expandedTerms.add(key.toLowerCase());
+        // Add all other synonyms in this group
+        synonymList.forEach(synonym => {
+          expandedTerms.add(synonym.toLowerCase());
+        });
+      }
+    });
+  });
+  
+  return Array.from(expandedTerms);
 }
 
 // Load images from hardcoded paths with regex filtering

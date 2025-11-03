@@ -26,3 +26,7 @@ export interface Config {
   hardcodedPaths: HardcodedPath[];
 }
 
+export interface Synonyms {
+  [key: string]: string[];
+}
+
