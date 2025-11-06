@@ -6,9 +6,9 @@
   "happy": ["joyful", "cheerful", "ecstatic", "smiling", "smile", "excited", "thrilled", "elated", "jubilant"],
   "angry": ["mad", "frustrated", "irritated", "furious"],
   "surprised": ["shocked", "astonished", "amazed", "surprise"],
-  "confused": ["puzzled", "perplexed", "confused"],
+  "confused": ["puzzled", "perplexed", "confused", "chaos", "overthinking"],
   "scared": ["frightened", "terrified", "afraid"],
-  "anxious": ["nervous", "worried", "concerned", "worry", "nervous"],
+  "anxious": ["nervous", "worried", "concerned", "worry", "nervous", "stressed"],
   "grateful": ["thankful", "appreciative", "obliged"],
   "fell": ["fall", "fallen", "dropped", "droping"],
   "animal": ["beast", "creature", "wildlife", "pet", "dog", "cat", "bird", "fish", "reptile", "amphibian", "insect", "mammal", "rodent", "carnivore", "herbivore", "omnivore"],
@@ -32,6 +32,7 @@
   "stop": ["cross"],
   "time": ["clock", "calendar", "schedule"],
   "direction": ["compass"],
-  "night": ["dark"]
+  "night": ["dark", "black"],
+  "stone": ["rock", "pebble"]
 }
 
